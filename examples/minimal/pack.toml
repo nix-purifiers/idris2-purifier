@@ -1,0 +1,6 @@
+collection = "nightly-261102"
+
+[custom.all.purifierproof]
+type = "local"
+path = "."
+ipkg = "proof.ipkg"

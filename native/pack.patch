@@ -1,0 +1,233 @@
+--- a/src/Pack/Config/Environment/Variable.idr
++++ b/src/Pack/Config/Environment/Variable.idr
+@@ -1,5 +1,6 @@
+ module Pack.Config.Environment.Variable
+ 
++import System.Escape
+ import public Data.FilePath.File
+ import Pack.Config.Types
+ 
+@@ -31,7 +32,7 @@
+ ||| Interpolate an environment variable for use in a shell
+ export
+ Interpolation EnvVar where
+-  interpolate (MkEnvVar var val) = "\{var}=\{val}"
++  interpolate (MkEnvVar var val) = "\{var}=\{escapeArg val}"
+ 
+ --------------------------------------------------------------------------------
+ --          Environment Variables
+--- a/src/Pack/Config/Environment.idr
++++ b/src/Pack/Config/Environment.idr
+@@ -576,9 +576,12 @@
+ 
+ export
+ cachePkgs : HasIO io => (e : Env) => EitherT PackErr io PkgVersion
+-cachePkgs =
+-  let pkgs := toList e.all
+-   in do
++cachePkgs = do
++  capture <- getEnv "PACK_PURIFIER_CAPTURE"
++  rootCapture <- getEnv "PACK_PURIFIER_CAPTURE_ROOT"
++  let lazyCapture = isJust capture || rootCapture == Just "1"
++      pkgs := if lazyCapture then [] else toList e.all
++  do
+      (S n,ml,ps) <- needCaching Lin 0 60 pkgs | (0,_,_) => readIdrisVersion
+      traverse_ (doCache (S n) ml) ps
+      readIdrisVersion
+--- a/src/Pack/Core/Git.idr
++++ b/src/Pack/Core/Git.idr
+@@ -1,5 +1,6 @@
+ module Pack.Core.Git
+ 
++import System
+ import Data.String
+ import public Pack.Core.Git.Consts
+ import Pack.Core.IO
+@@ -47,7 +48,9 @@
+   ||| Query a Git repo for the latest commit of the main branch.
+   export covering
+   gitLatest : (url : URL) -> (branch : Branch) -> EitherT PackErr io Commit
+-  gitLatest url b =
++  gitLatest url b = do
++    frozen <- getEnv "PACK_PURIFIER_FROZEN"
++    when (frozen == Just "1") $ throwE (UnknownPkg "locked-git-revision")
+     MkCommit . fst . break isSpace <$> sysRun ["git", "ls-remote", url, b]
+ 
+   ||| Clone a git repository into `dir`, switch to the
+@@ -67,6 +70,8 @@
+         tmp   := gitTmpDir pkg
+ 
+      in do
++       frozen <- getEnv "PACK_PURIFIER_FROZEN"
++       when (frozen == Just "1") $ throwE (UnknownPkg pkg)
+        False <- exists tmp
+          | True => case forceFetch of
+              False => inDir tmp act
+--- a/src/Pack/Runner/Database.idr
++++ b/src/Pack/Runner/Database.idr
+@@ -1,5 +1,6 @@
+ module Pack.Runner.Database
+ 
++import System
+ import Core.FC
+ import Core.Name.Namespace
+ import Data.SortedMap
+@@ -187,11 +188,11 @@
+ withPkgEnv n (Core _)          f = withCoreGit f
+ 
+ newerSrc : HasIO io => File Abs -> Path Abs -> EitherT PackErr io String
+-newerSrc ts src = trim <$> sysRun ["find", src, "-newer", ts]
++newerSrc ts src = trim <$> sysRun ["find", src, "-name", ".idris2-purifier", "-prune", "-o", "-newer", ts, "-print"]
+ 
+ newerIpkg : HasIO io => File Abs -> File Abs -> EitherT PackErr io String
+ newerIpkg ts ipkg =
+-  trim <$> sysRun ["find", ipkg.parent, "-name", "\{ipkg.file}", "-newer", ts]
++  trim <$> sysRun ["find", ipkg.parent, "-name", ".idris2-purifier", "-prune", "-o", "-name", "\{ipkg.file}", "-newer", ts, "-print"]
+ 
+ -- checks the status of a library
+ libStatus :
+@@ -284,6 +285,19 @@
+   case lookup n e.all of
+     Nothing => throwE (UnknownPkg n)
+     Just p  => do
++      frozen <- getEnv "PACK_PURIFIER_FROZEN"
++      case (frozen, p) of
++        (Just "1", Local directory file _ _) => do
++          root <- getEnv "PACK_PURIFIER_ROOT"
++          ipkg <- getEnv "PACK_PURIFIER_ROOT_IPKG"
++          name <- getEnv "PACK_PURIFIER_ROOT_NAME"
++          when (root /= Just (interpolate directory) || ipkg /= Just (interpolate file) || name /= Just (value n)) $ throwE (UnknownPkg n)
++        _ => pure ()
++      capture <- getEnv "PACK_PURIFIER_CAPTURE"
++      rootCapture <- getEnv "PACK_PURIFIER_CAPTURE_ROOT"
++      when (isJust capture || rootCapture == Just "1") $ do
++        missing <- notCached n p
++        when missing (cachePkg n p)
+       d    <- loadIpkg n p
+       deps <- traverse resolveDep $ dependencies d
+       lib  <- libStatus n p d deps
+--- a/src/Pack/Runner/Query.idr
++++ b/src/Pack/Runner/Query.idr
+@@ -1,5 +1,7 @@
+ module Pack.Runner.Query
+ 
++import Language.JSON
++import System
+ import Core.Name.Namespace
+ import Data.List
+ import Data.IORef
+@@ -74,14 +76,66 @@
+ pkgNames : (e : Env) => List PkgName
+ pkgNames = keys e.all
+ 
++packageJSON : Package -> List (String, JSON)
++packageJSON (Git u c i p t n) = [("type",JString "git"),("url",JString (interpolate u)),("rev",JString (interpolate c)),("ipkg",JString (interpolate i))]
++packageJSON (Local d i p t) = [("type",JString "local"),("path",JString (interpolate d)),("ipkg",JString (interpolate i))]
++packageJSON (Core c) = [("type",JString "core")]
++
++libraryJSON : ResolvedLib U -> JSON
++libraryJSON rl = JObject $ [("name",JString (value rl.name)),("hash",JString (interpolate rl.hash)),("package",JString rl.desc.desc.name),("version",maybe JNull (JString . show) (the (Maybe PkgVersion) rl.desc.desc.version)),("content",JString rl.desc.cont),("dependencies",JArray (map (JString . value) (dependencies rl)))] ++ packageJSON rl.pkg
++
++projectJSON : Desc t -> JSON
++projectJSON description = JObject [("name",JString description.desc.name),("version",maybe JNull (JString . show) (the (Maybe PkgVersion) description.desc.version)),("executable",maybe JNull (JString . interpolate) (exec description)),("content",JString description.cont),("path",JString (interpolate description.path)),("dependencies",JArray (map (JString . value) (dependencies description)))]
++
++export covering
++emitMetadata : HasIO io => String -> EitherT PackErr io ()
++emitMetadata raw = case AbsFile.parse raw of
++  Nothing => throwE (UnknownPkg "invalid-root-ipkg-path")
++  Just file => do
++    description <- parseIpkgFile file file
++    putStrLn ("PURIFIER_PROJECT=" ++ show (projectJSON description))
++
++export covering
++emitCapture : HasIO io => (env : Env) => EitherT PackErr io ()
++emitCapture = do
++  _ <- traverse resolveLib env.config.autoLibs
++  sm <- readIORef env.cache
++  putStrLn ("PURIFIER_SETTINGS=" ++ show (JObject [("applications",JArray (map (JString . value) env.config.autoApps)),("documentation",JBoolean env.config.withDocs)]))
++  putStrLn ("PURIFIER_GRAPH=" ++ show (JArray (map libraryJSON (values sm))))
++  putStrLn ("PURIFIER_COMPILER=" ++ show (JObject [("url",JString (interpolate env.db.idrisURL)),("rev",JString (interpolate env.db.idrisCommit)),("version",JString (interpolate env.db.idrisVersion)),("collection",JString (interpolate env.config.collection))]))
++
++export covering
++captureDependencies : HasIO io => (env : Env) => CurDir => Maybe PkgOrIpkg -> EitherT PackErr io ()
++captureDependencies pkg = do
++  selected <- refinePkg pkg
++  description <- findAndParseLocalIpkg selected
++  _ <- resolveLib "prelude"
++  _ <- resolveLib "base"
++  _ <- resolveLib "network"
++  _ <- traverse resolveLib (dependencies description)
++  putStrLn ("PURIFIER_PROJECT=" ++ show (projectJSON description))
++  emitCapture
++
+ export covering
+ resolveAll :
+      {auto h : HasIO io}
+   -> {auto env : Env}
+   -> EitherT PackErr io (SortedMap PkgName (ResolvedLib U), List QPkg)
+ resolveAll = do
+-  ps <- traverse resolve pkgNames
++  selected <- getEnv "PACK_PURIFIER_CAPTURE"
++  names <- case selected of
++    Nothing => pure pkgNames
++    Just n => do
++      _ <- resolveLib "prelude"
++      _ <- resolveLib "network"
++      _ <- resolveLib (MkPkgName n)
++      sm <- readIORef env.cache
++      pure (keys sm)
++  ps <- traverse resolve names
+   sm <- readIORef env.cache
++  case selected of
++    Nothing => pure ()
++    Just _ => emitCapture
+   pure (sm, ps)
+ 
+ 
+--- a/src/Pack/Runner.idr
++++ b/src/Pack/Runner.idr
+@@ -1,5 +1,6 @@
+ module Pack.Runner
+ 
++import System
+ import Data.List.Quantifiers
+ import Data.IORef
+ import Data.SortedMap
+@@ -139,8 +140,8 @@
+ 
+ ||| Main application entry point (modulo error handling).
+ export covering
+-runCmd : HasIO io => EitherT PackErr io ()
+-runCmd = do
++runNativeCmd : HasIO io => EitherT PackErr io ()
++runNativeCmd = do
+   pd <- getPackDirs
+   withTmpDir $ do
+     cd       <- CD <$> curDir
+@@ -160,7 +161,13 @@
+       (Exec ** [p,args])        => idrisEnv mc fetch >>= exec p args
+       (Repl ** [p])             => idrisEnv mc fetch >>= idrisRepl p
+       (Build ** [p])            => idrisEnv mc fetch >>= build !(refinePkg p)
+-      (BuildDeps ** [p])        => idrisEnv mc fetch >>= buildDeps !(refinePkg p)
++      (BuildDeps ** [p])        => do
++        capture <- getEnv "PACK_PURIFIER_CAPTURE_ROOT"
++        case capture of
++          Just "1" => do
++            e <- env mc fetch
++            captureDependencies {env=e} p
++          _ => idrisEnv mc fetch >>= buildDeps !(refinePkg p)
+       (Typecheck ** [p])        => idrisEnv mc fetch >>= typecheck !(refinePkg p)
+       (Clean ** [p])            => idrisEnv mc fetch >>= clean !(refinePkg p)
+       (CleanBuild ** [p])       => do p <- refinePkg p
+@@ -184,3 +191,11 @@
+         install []
+         writeCollection
+       (Uninstall ** [])         => uninstallPack @{metaConfigToLogRef @{mc}}
++
++export covering
++runCmd : HasIO io => EitherT PackErr io ()
++runCmd = do
++  metadata <- getEnv "PACK_PURIFIER_METADATA"
++  case metadata of
++    Just path => emitMetadata path
++    Nothing => runNativeCmd

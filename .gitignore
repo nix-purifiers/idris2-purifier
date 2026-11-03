@@ -1,0 +1,8 @@
+result*
+cli
+.idris2-purifier/
+build/
+__pycache__/
+*.pyc
+*.log
+/cli-next

@@ -1,0 +1,167 @@
+{
+  "compiler": {
+    "collection": "nightly-261102",
+    "entry": "sources/compiler",
+    "rev": "c35a6bd16ca2adea9484c64507bfc2041ceec75a",
+    "url": "https://github.com/idris-lang/Idris2",
+    "version": "0.8.0"
+  },
+  "configurations": {
+    "pack.toml": "collection = \"nightly-261102\"\n\n[custom.all.purifierproof]\ntype = \"local\"\npath = \".\"\nipkg = \"proof.ipkg\"\n"
+  },
+  "entries": [
+    {
+      "git": {
+        "commitObject": null,
+        "leaveDotGit": false,
+        "rev": "45ebdcd6808e694994cb9639598bb27cad64df4b",
+        "submodules": false,
+        "url": "https://github.com/stefan-hoeck/idris2-algebra"
+      },
+      "hash": "sha256-4eWEa8UHtySig8KwZR3aZDbTRi6npWGxdUgDNkATa3E=",
+      "path": "sources/algebra"
+    },
+    {
+      "git": {
+        "commitObject": null,
+        "leaveDotGit": false,
+        "rev": "c35a6bd16ca2adea9484c64507bfc2041ceec75a",
+        "submodules": false,
+        "url": "https://github.com/idris-lang/Idris2"
+      },
+      "hash": "sha256-/O1JCsz2ple0YDe1MOdkujgt7PVPIC0a0RopwZPOQxQ=",
+      "path": "sources/compiler"
+    },
+    {
+      "git": {
+        "commitObject": null,
+        "leaveDotGit": false,
+        "rev": "90a2363256cbaafd3b0cc4e2bf36003761b6c4f0",
+        "submodules": false,
+        "url": "https://github.com/stefan-hoeck/idris2-elab-util"
+      },
+      "hash": "sha256-gCEJ+tpzM/i2rKABCsyYa3WBb089regWgM84XCSfUiw=",
+      "path": "sources/elab-util"
+    },
+    {
+      "git": {
+        "commitObject": null,
+        "leaveDotGit": false,
+        "rev": "7ad095dc89232cfa667e47ae507b13f132837fdd",
+        "submodules": false,
+        "url": "https://github.com/stefan-hoeck/idris2-refined"
+      },
+      "hash": "sha256-UWyNTSF7k3DLgHczRhut32HJfc2igjGkTVYi0NeXr9s=",
+      "path": "sources/refined"
+    }
+  ],
+  "extraInputs": [],
+  "inputs": {
+    "pack.toml": {
+      "sha256": "33041611c45673eae57bee64bd32c1162cdcb2f1d54a5daf923292da75d68b01"
+    },
+    "proof.ipkg": {
+      "sha256": "5b3fb659c4deb9988b068bdc30e37ae99ba9be3624255ac48744970d37da5782"
+    }
+  },
+  "nodes": [
+    {
+      "content": "package algebra\n\nauthors    = \"stefan-hoeck\"\nbrief      = \"Lawful algebraic structures\"\nversion    = 0.0.1\nreadme     = \"README.md\"\nlicense    = \"BSD-3 Clause\"\n\nsourcedir  = \"src\"\ndepends    = base    >= 0.6.0\n\nmodules = Algebra.Group\n        , Algebra.OrderedRing\n        , Algebra.Ring\n\n        , Algebra.Solver.Group\n        , Algebra.Solver.Monoid\n        , Algebra.Solver.Ops\n        , Algebra.Solver.Product\n        , Algebra.Solver.Ring\n        , Algebra.Solver.Semigroup\n        , Algebra.Solver.Semiring\n        , Algebra.Solver.Sum\n\n        , Control.Relation.ReflexiveClosure\n        , Control.Relation.Trichotomy\n\n        , Data.Maybe.Lower\n        , Data.Maybe.Upper\n        , Data.Maybe0\n        , Data.Either0\n        , Data.Pair0\n        , Data.Prim.Bits8\n        , Data.Prim.Bits16\n        , Data.Prim.Bits32\n        , Data.Prim.Bits64\n        , Data.Prim.Char\n        , Data.Prim.Int8\n        , Data.Prim.Int16\n        , Data.Prim.Int32\n        , Data.Prim.Int64\n        , Data.Prim.Integer\n        , Data.Prim.String\n",
+      "dependencies": [
+        "base"
+      ],
+      "entry": "sources/algebra",
+      "hash": "35d5588f0f0a0c61ce1a5fe1a7078d91",
+      "ipkg": "algebra.ipkg",
+      "name": "algebra",
+      "package": "algebra",
+      "rev": "45ebdcd6808e694994cb9639598bb27cad64df4b",
+      "type": "git",
+      "url": "https://github.com/stefan-hoeck/idris2-algebra",
+      "version": "0.0.1"
+    },
+    {
+      "content": "package base\nversion = 0.8.0\n\nopts = \"--ignore-missing-ipkg -Wno-shadowing\"\n\nmodules = Control.App,\n          Control.App.Console,\n          Control.App.FileIO,\n          Control.Applicative.Const,\n          Control.Function,\n          Control.Function.FunExt,\n          Control.Monad.Either,\n          Control.Monad.Error.Either,\n          Control.Monad.Error.Interface,\n          Control.Monad.Identity,\n          Control.Monad.Maybe,\n          Control.Monad.Partial,\n          Control.Monad.RWS,\n          Control.Monad.RWS.CPS,\n          Control.Monad.RWS.Interface,\n          Control.Monad.Reader,\n          Control.Monad.Reader.Interface,\n          Control.Monad.Reader.Reader,\n          Control.Monad.ST,\n          Control.Monad.State,\n          Control.Monad.State.Interface,\n          Control.Monad.State.State,\n          Control.Monad.Trans,\n          Control.Monad.Writer,\n          Control.Monad.Writer.CPS,\n          Control.Monad.Writer.Interface,\n          Control.Ord,\n          Control.Order,\n          Control.Relation,\n          Control.Relation.Closure,\n          Control.WellFounded,\n\n          Data.Bifoldable,\n          Data.Bits,\n          Data.Bool,\n          Data.Bool.Decidable,\n          Data.Bool.Xor,\n          Data.Buffer,\n          Data.Colist,\n          Data.Colist1,\n          Data.Contravariant,\n          Data.Double,\n          Data.DPair,\n          Data.Either,\n          Data.Fin,\n          Data.Fin.Arith,\n          Data.Fin.Order,\n          Data.Fin.Properties,\n          Data.Fin.Split,\n          Data.Fuel,\n          Data.Fun,\n          Data.IOArray,\n          Data.IOArray.Prims,\n          Data.IORef,\n          Data.Integral,\n          Data.List,\n          Data.List.AtIndex,\n          Data.List.Elem,\n          Data.List.HasLength,\n          Data.List.Lazy,\n          Data.List.Lazy.Quantifiers,\n          Data.List.Quantifiers,\n          Data.List.Views,\n          Data.List1,\n          Data.List1.Elem,\n          Data.List1.Properties,\n          Data.List1.Quantifiers,\n          Data.Maybe,\n          Data.Morphisms,\n          Data.Nat,\n          Data.Nat.Order,\n          Data.Nat.Order.Properties,\n          Data.Nat.Views,\n          Data.OpenUnion,\n          Data.Primitives.Interpolation,\n          Data.Primitives.Views,\n          Data.Ref,\n          Data.Rel,\n          Data.Singleton,\n          Data.SnocList,\n          Data.SnocList.Elem,\n          Data.SnocList.HasLength,\n          Data.SnocList.Operations,\n          Data.SnocList.Quantifiers,\n          Data.So,\n          Data.SortedMap,\n          Data.SortedMap.Dependent,\n          Data.SortedSet,\n          Data.Stream,\n          Data.String,\n          Data.These,\n          Data.Vect,\n          Data.Vect.AtIndex,\n          Data.Vect.Elem,\n          Data.Vect.Quantifiers,\n          Data.Vect.Views,\n          Data.Void,\n          Data.Zippable,\n\n          Debug.Trace,\n\n          Decidable.Decidable,\n          Decidable.Equality,\n          Decidable.Equality.Core,\n\n          Deriving.Common,\n          Deriving.Foldable,\n          Deriving.Functor,\n          Deriving.Show,\n          Deriving.Traversable,\n\n          Language.Reflection,\n          Language.Reflection.TT,\n          Language.Reflection.TTImp,\n\n          Syntax.PreorderReasoning,\n          Syntax.PreorderReasoning.Ops,\n          Syntax.PreorderReasoning.Generic,\n          Syntax.WithProof,\n\n          System,\n          System.Clock,\n          System.Concurrency,\n          System.Directory,\n          System.Errno,\n          System.Escape,\n          System.FFI,\n          System.File,\n          System.File.Buffer,\n          System.File.Error,\n          System.File.Handle,\n          System.File.Meta,\n          System.File.Mode,\n          System.File.Permissions,\n          System.File.Process,\n          System.File.ReadWrite,\n          System.File.Support,\n          System.File.Types,\n          System.File.Virtual,\n          System.Info,\n          System.REPL,\n          System.Signal,\n          System.Term\n",
+      "dependencies": [],
+      "hash": "c35a6bd16ca2adea9484c64507bfc2041ceec75a",
+      "name": "base",
+      "package": "base",
+      "type": "core",
+      "version": "0.8.0"
+    },
+    {
+      "content": "package elab-util\n\nauthors    = \"stefan-hoeck\"\nbrief      = \"Utilities and documentation for working with elaborator reflection\"\nversion    = 0.6.0\nreadme     = \"README.md\"\nlicense    = \"BSD-2 Clause\"\n\nsourcedir  = \"src\"\ndepends    = base    >= 0.6.0\n\nmodules = Derive.Abs\n        , Derive.Eq\n        , Derive.Fractional\n        , Derive.FromChar\n        , Derive.FromDouble\n        , Derive.FromString\n        , Derive.Integral\n        , Derive.Monoid\n        , Derive.Neg\n        , Derive.Num\n        , Derive.Ord\n        , Derive.Prelude\n        , Derive.Semigroup\n        , Derive.Show\n\n        , Language.Reflection.Derive\n        , Language.Reflection.Refined\n        , Language.Reflection.Refined.Util\n        , Language.Reflection.Syntax\n        , Language.Reflection.Syntax.Ops\n        , Language.Reflection.Types\n        , Language.Reflection.Util\n",
+      "dependencies": [
+        "base"
+      ],
+      "entry": "sources/elab-util",
+      "hash": "8c986271a39c4f1f8f8ca0b794de4fb9",
+      "ipkg": "elab-util.ipkg",
+      "name": "elab-util",
+      "package": "elab-util",
+      "rev": "90a2363256cbaafd3b0cc4e2bf36003761b6c4f0",
+      "type": "git",
+      "url": "https://github.com/stefan-hoeck/idris2-elab-util",
+      "version": "0.6.0"
+    },
+    {
+      "content": "package linear\nversion = 0.8.0\n\noptions = \"--ignore-missing-ipkg\"\n\nmodules = Control.Linear.LIO,\n\n          Data.Linear,\n          Data.Linear.Bifunctor,\n          Data.Linear.Copies,\n          Data.Linear.Interface,\n          Data.Linear.LEither,\n          Data.Linear.LList,\n          Data.Linear.List.LQuantifiers,\n          Data.Linear.LMaybe,\n          Data.Linear.LNat,\n          Data.Linear.LVect,\n          Data.Linear.Notation,\n\n          System.Concurrency.Linear,\n          System.Concurrency.Session\n",
+      "dependencies": [],
+      "hash": "c35a6bd16ca2adea9484c64507bfc2041ceec75a",
+      "name": "linear",
+      "package": "linear",
+      "type": "core",
+      "version": "0.8.0"
+    },
+    {
+      "content": "package network\nversion = 0.8.0\n\nopts = \"--ignore-missing-ipkg\"\n\nmodules = Control.Linear.Network,\n\n          Network.Socket,\n          Network.Socket.Data,\n          Network.Socket.Raw,\n          Network.FFI\n\ndepends = linear\n",
+      "dependencies": [
+        "linear"
+      ],
+      "hash": "c35a6bd16ca2adea9484c64507bfc2041ceec75a",
+      "name": "network",
+      "package": "network",
+      "type": "core",
+      "version": "0.8.0"
+    },
+    {
+      "content": "package prelude\nversion = 0.8.0\n\nopts = \"--ignore-missing-ipkg --no-prelude\"\n\nmodules = Builtin,\n          PrimIO,\n          Prelude,\n          Prelude.Basics,\n          Prelude.Cast,\n          Prelude.EqOrd,\n          Prelude.Interfaces,\n          Prelude.Interpolation,\n          Prelude.IO,\n          Prelude.Num,\n          Prelude.Ops,\n          Prelude.Show,\n          Prelude.Types,\n          Prelude.Uninhabited\n",
+      "dependencies": [],
+      "hash": "c35a6bd16ca2adea9484c64507bfc2041ceec75a",
+      "name": "prelude",
+      "package": "prelude",
+      "type": "core",
+      "version": "0.8.0"
+    },
+    {
+      "content": "package refined\nversion = 0.1.0\nauthors = \"stefan-hoeck\"\nlicense = \"BSD-3\"\nbrief   = \"Refinement types in Idris2\"\n\ndepends = elab-util\n        , algebra\n\nsourcedir = \"src\"\nmodules = Data.Refined\n        , Data.Refined.Bits16\n        , Data.Refined.Bits32\n        , Data.Refined.Bits64\n        , Data.Refined.Bits8\n        , Data.Refined.Char\n        , Data.Refined.Core\n        , Data.Refined.Int16\n        , Data.Refined.Int32\n        , Data.Refined.Int64\n        , Data.Refined.Int8\n        , Data.Refined.Integer\n        , Data.Refined.List\n        , Data.Refined.Nat\n        , Data.Refined.String\n\n        , Decidable.HDec\n        , Decidable.HDecEq\n\n        , Derive.Refined\n        , Derive.HDecEq\n",
+      "dependencies": [
+        "elab-util",
+        "algebra"
+      ],
+      "entry": "sources/refined",
+      "hash": "41a9b6696867c37762943d9a5f1bcd6e",
+      "ipkg": "refined.ipkg",
+      "name": "refined",
+      "package": "refined",
+      "rev": "7ad095dc89232cfa667e47ae507b13f132837fdd",
+      "type": "git",
+      "url": "https://github.com/stefan-hoeck/idris2-refined",
+      "version": "0.1.0"
+    }
+  ],
+  "project": {
+    "content": "package purifierproof\nversion = 0.1.0\ndepends = refined\nmodules = Main\nmain = Main\nexecutable = proof\n",
+    "dependencies": [
+      "refined"
+    ],
+    "executable": "proof",
+    "ipkg": "proof.ipkg",
+    "name": "purifierproof",
+    "version": "0.1.0"
+  },
+  "purifier": "idris2",
+  "requirements": [],
+  "sdk": "c1ccfc02d7882816912f376a9a96bcb8bc1b1a45e1562060df812bbe6ab6476f",
+  "version": 1
+}
