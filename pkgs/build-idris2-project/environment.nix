@@ -80,7 +80,7 @@ let
                 builtins.filter (name: builtins.any (n: n.name == name) external) node.dependencies
               );
               preBuild = ''
-                ${python3}/bin/python3 ${../idris2_purifier/check-metadata.py} ${nativePack}/bin/pack "$src"/${lib.escapeShellArg node.ipkg} ${
+                ${python3}/bin/python3 ${../../idris2_purifier/check-metadata.py} ${nativePack}/bin/pack "$src"/${lib.escapeShellArg node.ipkg} ${
                   writeText "idris-native-package.json" (
                     builtins.toJSON {
                       name = node.package;
@@ -131,7 +131,7 @@ let
     mkdir -p "$out/bin"
     cp ${manifest} "$out/manifest.json"
     ${lib.optionalString (data.project != null) ''
-      ${python3}/bin/python3 ${../idris2_purifier/check-metadata.py} ${nativePack}/bin/pack ${writeText "project.ipkg" data.project.content} ${writeText "idris-root-metadata.json" (builtins.toJSON data.project)}
+      ${python3}/bin/python3 ${../../idris2_purifier/check-metadata.py} ${nativePack}/bin/pack ${writeText "project.ipkg" data.project.content} ${writeText "idris-root-metadata.json" (builtins.toJSON data.project)}
     ''}
     makeWrapper ${compiler}/bin/idris2 "$out/bin/idris2" \
       --prefix IDRIS2_PACKAGE_PATH ':' ${lib.escapeShellArg (lib.makeSearchPath "lib/idris2-${data.compiler.version}" (builtins.attrValues packages))}

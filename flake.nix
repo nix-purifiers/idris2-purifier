@@ -19,18 +19,18 @@
       forAll = nixpkgs.lib.genAttrs systems;
       overlay = final: prev: {
         idris2-purifier = final.lib.makeScope final.newScope (scope: {
-          nativePack = scope.callPackage ./nix/native.nix { };
-          nativeLsp = scope.callPackage ./nix/lsp.nix { };
-          mkCompiler = scope.callPackage ./nix/compiler.nix { nixpkgsSrc = nixpkgs; };
-          sdkVersion = import ./nix/sdk-version.nix {
+          nativePack = scope.callPackage ./pkgs/build-idris2-project/native.nix { };
+          nativeLsp = scope.callPackage ./pkgs/build-idris2-project/lsp.nix { };
+          mkCompiler = scope.callPackage ./pkgs/build-idris2-project/compiler.nix { nixpkgsSrc = nixpkgs; };
+          sdkVersion = import ./pkgs/build-idris2-project/sdk-version.nix {
             nixpkgsSrc = nixpkgs;
             inherit (final) idris2 idris2Packages;
           };
-          cli = scope.callPackage ./nix/cli.nix {
+          cli = scope.callPackage ./pkgs/cli/default.nix {
             nixpkgsSrc = nixpkgs;
             purifierSrc = purifier;
           };
-          buildIdrisProject = scope.callPackage ./nix/build-project.nix {
+          buildIdrisProject = scope.callPackage ./pkgs/build-idris2-project/default.nix {
             nixpkgsSrc = nixpkgs;
             purifier = import (purifier + "/nix/lib") { inherit (final) lib; };
           };
@@ -56,7 +56,7 @@
           meta.description = "Lock native Idris packages";
         };
       });
-      lib.idris2-purifier.readLock = import ./nix/read-lock.nix { lib = nixpkgs.lib; };
+      lib.idris2-purifier = (nixpkgs.lib.extend (import ./lib-overlays/default)).idris2-purifier;
       checks = forAll (
         system:
         let
