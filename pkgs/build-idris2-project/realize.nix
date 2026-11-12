@@ -16,7 +16,7 @@ let
     inherit (pkgs) idris2 idris2Packages;
   };
   build =
-    pkgs.callPackage ./build-project.nix
+    pkgs.callPackage ./default.nix
       {
         inherit
           purifier

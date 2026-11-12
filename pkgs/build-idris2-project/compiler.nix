@@ -25,7 +25,7 @@ let
         (old.postPatch or "")
         + "\n"
         + ''
-          ${python3}/bin/python3 ${../native/disable-local-packages.py} "$PWD" ${emptyPackages}
+          ${python3}/bin/python3 ${../../native/disable-local-packages.py} "$PWD" ${emptyPackages}
         '';
     });
   });

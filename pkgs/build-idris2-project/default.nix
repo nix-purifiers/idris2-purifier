@@ -26,7 +26,9 @@
   buildCommand ? "",
 }:
 let
-  lock = purifier.checkLock (import ./read-lock.nix { inherit lib; } { inherit src lockFile; });
+  lock = purifier.checkLock (
+    import ../../lib-overlays/default/read-lock.nix { inherit lib; } { inherit src lockFile; }
+  );
   prepared = import ./environment.nix (builtins.removeAttrs scope [
     "gnutar"
     "gzip"
@@ -46,7 +48,7 @@ let
   };
   source = runCommand "idris-validated-source" { } ''
     ${lib.optionalString (lock.data.project != null) ''
-      ${python3}/bin/python3 ${../idris2_purifier/check-metadata.py} ${nativePack}/bin/pack ${lib.escapeShellArg "${rawSource}/${lock.data.project.ipkg}"} ${writeText "idris-project.json" (builtins.toJSON lock.data.project)}
+      ${python3}/bin/python3 ${../../idris2_purifier/check-metadata.py} ${nativePack}/bin/pack ${lib.escapeShellArg "${rawSource}/${lock.data.project.ipkg}"} ${writeText "idris-project.json" (builtins.toJSON lock.data.project)}
     ''}
     mkdir -p "$out"
     cp -pr ${rawSource}/. "$out/"
@@ -78,7 +80,7 @@ let
             (old.postBuild or "")
             + "\n"
             + ''
-              ${python3}/bin/python3 ${../native/recompile-chez.py} ${lib.getExe prepared.compiler.chez}
+              ${python3}/bin/python3 ${../../native/recompile-chez.py} ${lib.getExe prepared.compiler.chez}
             '';
           installPhase =
             lib.replaceStrings

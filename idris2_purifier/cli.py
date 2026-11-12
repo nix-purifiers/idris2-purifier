@@ -40,7 +40,7 @@ def realize(root, companion, target="environment"):
             "build",
             "--impure",
             "--file",
-            str(Path(__file__).parent.parent / "nix/realize.nix"),
+            str(Path(__file__).parent.parent / "pkgs/build-idris2-project/realize.nix"),
             "--argstr",
             "project",
             str(root),

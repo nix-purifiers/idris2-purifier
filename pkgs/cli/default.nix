@@ -26,14 +26,14 @@
 stdenvNoCC.mkDerivation {
   pname = "idris2-purifier";
   version = "0.1.0";
-  src = ../.;
+  src = ../..;
   nativeBuildInputs = [ makeWrapper ];
   dontBuild = true;
   installPhase = ''
     mkdir -p "$out/bin" "$out/lib/idris2-purifier"
-    cp -r idris2_purifier nix native "$out/lib/idris2-purifier/"
+    cp -r idris2_purifier pkgs lib-overlays native "$out/lib/idris2-purifier/"
     install -m755 bin/idris2-purifier "$out/bin/idris2-purifier"
-    substituteInPlace "$out/lib/idris2-purifier/nix/realize.nix" --replace-fail '@nixpkgs@' '${nixpkgsSrc}' --replace-fail '@purifier@' '${purifierSrc}'
+    substituteInPlace "$out/lib/idris2-purifier/pkgs/build-idris2-project/realize.nix" --replace-fail '@nixpkgs@' '${nixpkgsSrc}' --replace-fail '@purifier@' '${purifierSrc}'
     wrapProgram "$out/bin/idris2-purifier" \
       --prefix PATH : ${
         lib.makeBinPath [
