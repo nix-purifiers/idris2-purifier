@@ -24,6 +24,7 @@
   doCheck ? false,
   checkCommand ? "",
   buildCommand ? "",
+  javascriptTargets ? { },
 }:
 let
   lock = purifier.checkLock (
@@ -60,6 +61,75 @@ let
     idrisLibraries = builtins.attrValues prepared.packages;
     inherit nativeBuildInputs;
   };
+  javascriptPackages = lib.mapAttrs (
+    name: backend:
+    assert lib.assertMsg (
+      builtins.match "[A-Za-z][A-Za-z0-9_-]*" name != null
+    ) "Idris JavaScript target names must be simple identifiers";
+    assert lib.assertMsg (builtins.elem backend [
+      "browser"
+      "node"
+    ]) "Idris JavaScript targets select browser or node";
+    assert lib.assertMsg (
+      lock.data.project != null && lock.data.project.executable != null
+    ) "Idris JavaScript targets require a captured executable package";
+    let
+      browser = backend == "browser";
+      filename = lock.data.project.executable;
+      codegen = if browser then "javascript" else "node";
+    in
+    assert lib.assertMsg (
+      !browser || lib.hasSuffix ".html" filename
+    ) "Idris browser targets require a captured executable name ending in .html";
+    assert lib.assertMsg (
+      builtins.match "[A-Za-z0-9_][A-Za-z0-9_.-]*" filename != null
+    ) "Idris JavaScript executable names must be plain filenames";
+    root.executable.overrideAttrs (old: {
+      pname = "${old.pname}-${name}";
+      dontPatchShebangs = true;
+      dontStrip = true;
+      buildPhase = ''
+        runHook preBuild
+        if find . -type f -name ${lib.escapeShellArg filename} | grep -q .; then
+          echo 'Idris JavaScript executable already exists in the source tree' >&2
+          exit 1
+        fi
+        idris2 --cg ${codegen} --build ${lib.escapeShellArg lock.data.project.ipkg}
+        runHook postBuild
+      '';
+      installPhase = ''
+        runHook preInstall
+        mkdir -p "$out/${if browser then "web" else "node"}"
+        mapfile -t idrisArtifacts < <(find . -type f -name ${lib.escapeShellArg filename})
+        test "''${#idrisArtifacts[@]}" = 1
+        cp "''${idrisArtifacts[0]}" "$out/${if browser then "web" else "node"}/${filename}"
+        mkdir -p "$out/nix-support/idris-javascript"
+        ${python3}/bin/python3 ${./javascript-proof.py} ${source} "''${idrisArtifacts[0]}" \
+          "$out/${if browser then "web" else "node"}/${filename}" ${prepared.compiler} ${codegen} \
+          "$out/nix-support/idris-javascript/proof.json"
+        runHook postInstall
+      '';
+      passthru = (old.passthru or { }) // {
+        inherit backend;
+        compiler = prepared.compiler;
+        entryPoint = "${if browser then "web" else "node"}/${filename}";
+      };
+    })
+  ) javascriptTargets;
+  projections = lib.mapAttrs (
+    name: backend:
+    if backend == "browser" then
+      purifier.resourceProjections {
+        producer = javascriptPackages.${name};
+        roots."." = "web";
+        inherit runCommand python3;
+        name = "idris-${name}-browser-resources";
+      }
+    else
+      {
+        node = javascriptPackages.${name};
+      }
+  ) javascriptTargets;
   project =
     if lock.data.project != null then
       (
@@ -123,6 +193,6 @@ assert lib.assertMsg (lock.data.sdk == sdkVersion) "Pack frontend SDK changed; u
     environment = prepared.output;
   };
   tests = project;
-  inherit release;
+  inherit release projections javascriptPackages;
   fetches = lock.entries;
 }

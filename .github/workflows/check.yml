@@ -20,11 +20,14 @@ jobs:
       - run: nix flake check -L
       - run: python3 tests/conformance.py
       - run: python3 tests/capture.py
+      - run: python3 tests/javascript-controls.py
       - name: Rebuild the project outputs
         run: |
           purifier_system=$(nix eval --impure --raw --expr builtins.currentSystem)
           nix build --rebuild --no-link \
             ".#checks.$purifier_system.environment" \
             ".#checks.$purifier_system.project" \
-            ".#checks.$purifier_system.release"
+            ".#checks.$purifier_system.release" \
+            ".#checks.$purifier_system.javascript" \
+            ".#checks.$purifier_system.javascript-revision"
       - run: python3 tests/rebuild.py

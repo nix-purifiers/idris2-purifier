@@ -2,6 +2,32 @@
 
 Locked, Nix-resolved Idris libraries for Pack.
 
+## JavaScript executable targets
+
+`buildIdrisProject` can additionally compile a captured executable package with
+the collection compiler's native browser and Node backends:
+
+```nix
+build = pkgs.idris2-purifier.buildIdrisProject {
+  src = ./project;
+  javascriptTargets = { browser = "browser"; server = "node"; };
+};
+```
+
+The ordinary `build.packages.project` continues to use Chez. Additional native
+outputs are in `build.javascriptPackages.<name>`. A browser package must author
+an executable name ending in `.html` in its `.ipkg`, then capture that metadata
+with `idris2-purifier lock --update`. Idris emits the HTML itself; the purifier
+preserves the authored filename and compiler output bytes. Node targets preserve
+the same native filename and run with Node explicitly.
+
+Browser resources are available through `build.projections.<name>.web.directory`
+and `build.projections.<name>.java-resources.classPath`. Node output is available
+through `build.projections.<name>.node`, with its relative `entryPoint` attribute.
+Targets must be executable packages with dependencies and foreign imports that
+support the selected JavaScript backend. This does not convert native FFI code
+or provide external JavaScript dependencies.
+
 ## Quickstart
 
 ```sh
