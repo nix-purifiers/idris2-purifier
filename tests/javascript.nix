@@ -32,6 +32,7 @@ pkgs.runCommand "idris-native-javascript-consumers"
       pkgs.python3
       pkgs.jdk
     ];
+    FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; };
     passthru = { inherit build; };
   }
   ''
@@ -39,7 +40,7 @@ pkgs.runCommand "idris-native-javascript-consumers"
       mkdir -p "$HOME" "$out"
       node -e 'require(process.argv[1]); if(globalThis.purifierAnswer !== ${toString expected}) throw new Error("Idris Node result")' \
         ${build.javascriptPackages.node}/node/proof.html
-      chromium --headless --no-sandbox --disable-gpu --dump-dom \
+      chromium --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --user-data-dir="$TMPDIR/file-profile" --dump-dom \
         file://${build.projections.browser.web.directory}/proof.html > "$out/dom.html" 2> "$TMPDIR/chromium.log"
       grep 'data-answer="${toString expected}"' "$out/dom.html"
       cmp ${build.javascriptPackages.browser}/web/proof.html ${build.projections.browser.web.directory}/proof.html
@@ -68,10 +69,10 @@ pkgs.runCommand "idris-native-javascript-consumers"
     PY
       python -c 'import textwrap; exec(textwrap.dedent(open("serve.py").read()))' > "$TMPDIR/http.log" 2>&1 &
       server=$!
-      trap 'kill "$server"' EXIT
+      trap 'checkStatus=$?; if [ "$checkStatus" -ne 0 ]; then cat "$TMPDIR/chromium.log" "$TMPDIR/http.log" >&2; fi; kill "$server" || true; exit "$checkStatus"' EXIT
       for attempt in $(seq 1 100); do test -s port && break; sleep 0.05; done
       test -s port
-      chromium --headless --no-sandbox --disable-gpu --dump-dom \
+      chromium --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --user-data-dir="$TMPDIR/http-profile" --dump-dom \
         "http://127.0.0.1:$(cat port)/proof.html" > "$out/http-dom.html" 2>> "$TMPDIR/chromium.log"
       grep 'data-answer="${toString expected}"' "$out/http-dom.html"
   ''
