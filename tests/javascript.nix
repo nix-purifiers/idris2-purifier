@@ -40,7 +40,7 @@ pkgs.runCommand "idris-native-javascript-consumers"
       node -e 'require(process.argv[1]); if(globalThis.purifierAnswer !== ${toString expected}) throw new Error("Idris Node result")' \
         ${build.javascriptPackages.node}/node/proof.html
       chromium --headless --no-sandbox --disable-gpu --dump-dom \
-        file://${build.projections.browser.web.directory}/proof.html > "$out/dom.html" 2> "$out/chromium.log"
+        file://${build.projections.browser.web.directory}/proof.html > "$out/dom.html" 2> "$TMPDIR/chromium.log"
       grep 'data-answer="${toString expected}"' "$out/dom.html"
       cmp ${build.javascriptPackages.browser}/web/proof.html ${build.projections.browser.web.directory}/proof.html
       cat > Resource.java <<'JAVA'
@@ -66,12 +66,12 @@ pkgs.runCommand "idris-native-javascript-consumers"
       pathlib.Path("port").write_text(str(server.server_port))
       server.serve_forever()
     PY
-      python -c 'import textwrap; exec(textwrap.dedent(open("serve.py").read()))' > "$out/http.log" 2>&1 &
+      python -c 'import textwrap; exec(textwrap.dedent(open("serve.py").read()))' > "$TMPDIR/http.log" 2>&1 &
       server=$!
       trap 'kill "$server"' EXIT
       for attempt in $(seq 1 100); do test -s port && break; sleep 0.05; done
       test -s port
       chromium --headless --no-sandbox --disable-gpu --dump-dom \
-        "http://127.0.0.1:$(cat port)/proof.html" > "$out/http-dom.html" 2>> "$out/chromium.log"
+        "http://127.0.0.1:$(cat port)/proof.html" > "$out/http-dom.html" 2>> "$TMPDIR/chromium.log"
       grep 'data-answer="${toString expected}"' "$out/http-dom.html"
   ''
