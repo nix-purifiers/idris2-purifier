@@ -103,6 +103,10 @@ let
         mapfile -t idrisArtifacts < <(find . -type f -name ${lib.escapeShellArg filename})
         test "''${#idrisArtifacts[@]}" = 1
         cp "''${idrisArtifacts[0]}" "$out/${if browser then "web" else "node"}/${filename}"
+        mkdir -p "$out/nix-support/idris-javascript"
+        ${python3}/bin/python3 ${./javascript-proof.py} ${source} "''${idrisArtifacts[0]}" \
+          "$out/${if browser then "web" else "node"}/${filename}" ${prepared.compiler} ${codegen} \
+          "$out/nix-support/idris-javascript/proof.json"
         runHook postInstall
       '';
       passthru = (old.passthru or { }) // {

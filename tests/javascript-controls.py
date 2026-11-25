@@ -33,7 +33,7 @@ main = primIO nativeOnly
                     ' + "/nix/lib") { inherit (p) lib; }; }') if core else ""
         expression = f'''let
           f = builtins.getFlake {json.dumps(str(repo))};
-          p = import f.inputs.nixpkgs {{ system = "x86_64-linux"; overlays = [ f.overlays.default ]; }};
+          p = import f.inputs.nixpkgs {{ system = builtins.currentSystem; overlays = [ f.overlays.default ]; }};
           builder = p.idris2-purifier.buildIdrisProject{override};
         in (builder {{ src = /. + {json.dumps(str(source))};
           javascriptTargets.proof = "node"; }}).javascriptPackages.proof'''
