@@ -90,6 +90,10 @@ let
       dontStrip = true;
       buildPhase = ''
         runHook preBuild
+        if find . -type f -name ${lib.escapeShellArg filename} | grep -q .; then
+          echo 'Idris JavaScript executable already exists in the source tree' >&2
+          exit 1
+        fi
         idris2 --cg ${codegen} --build ${lib.escapeShellArg lock.data.project.ipkg}
         runHook postBuild
       '';

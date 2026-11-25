@@ -11,7 +11,19 @@ let
       node = "node";
     };
   };
+  rejects =
+    source: targets: name:
+    !(builtins.tryEval (
+      (pkgs.idris2-purifier.buildIdrisProject {
+        src = source;
+        javascriptTargets = targets;
+      }).javascriptPackages.${name}.drvPath
+    )).success;
 in
+assert rejects src { bad = "wasm"; } "bad";
+assert rejects src { "../escape" = "node"; } "../escape";
+assert rejects ../examples/minimal { browser = "browser"; } "browser";
+assert rejects ./fixtures/javascript-library { node = "node"; } "node";
 pkgs.runCommand "idris-native-javascript-consumers"
   {
     nativeBuildInputs = [

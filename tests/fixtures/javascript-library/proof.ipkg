@@ -1,0 +1,4 @@
+package purifierproof
+version = 0.1.0
+depends = refined
+modules = Main
