@@ -71,6 +71,12 @@
           inherit (build.packages) environment project;
           release = build.release;
           cli = self.packages.${system}.default;
+          javascript = import ./tests/javascript.nix { inherit pkgs; };
+          javascript-revision = import ./tests/javascript.nix {
+            inherit pkgs;
+            src = ./tests/fixtures/javascript-revision;
+            expected = 43;
+          };
         }
       );
       formatter = forAll (system: (pkgsFor system).nixfmt-tree);
